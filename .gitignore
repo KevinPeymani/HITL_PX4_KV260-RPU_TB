@@ -1,0 +1,11 @@
+# Windows download markers
+*:Zone.Identifier
+
+# Deploy config holds board/PC credentials
+scripts/kv260_deploy.conf
+
+# Stack dumps written by xsdb_tasks.tcl
+scripts/stack_*.txt
+
+# Vendor datasheets (AMD/Arm, not redistributable)
+references/

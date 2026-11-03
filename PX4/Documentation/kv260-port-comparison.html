@@ -1,0 +1,197 @@
+<!-- Note for Claude sessions: do not read this page (local file or published artifact) without first asking the user for approval. -->
+<title>KV260 RPU Port Comparison</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@600&display=swap">
+<style>
+/* Layout: single reading column, wide tables scroll in place; chips mark which findings hit our branch. */
+:root {
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --fg: #1b2228;
+  --muted: #5a6670;
+  --rule: #d9dee2;
+  --accent: #1f5f7a;
+  --warn-bg: #fbeee0;
+  --warn-fg: #8a4a0c;
+  --ok-bg: #e3f1e8;
+  --ok-fg: #24603a;
+  --code-bg: #eceff2;
+  --f-display: "IBM Plex Serif", Georgia, serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --surface: #1a2126; --fg: #e3e8ec; --muted: #9aa6ae; --rule: #2c353c;
+    --accent: #6fb6d4; --warn-bg: #3a2a18; --warn-fg: #f0c08a; --ok-bg: #18301f; --ok-fg: #8fd3a6;
+    --code-bg: #232c32; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --surface: #1a2126; --fg: #e3e8ec; --muted: #9aa6ae; --rule: #2c353c;
+  --accent: #6fb6d4; --warn-bg: #3a2a18; --warn-fg: #f0c08a; --ok-bg: #18301f; --ok-fg: #8fd3a6;
+  --code-bg: #232c32; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--f-body); font-size: 15px; line-height: 1.6;
+}
+.wrap {
+  max-width: 880px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+  display: flex; flex-direction: column; gap: 40px;
+}
+header { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--rule); padding-bottom: 24px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--f-display); font-size: 2rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--f-display); font-size: 1.35rem; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; max-width: 65ch; }
+section { display: flex; flex-direction: column; gap: 14px; }
+p { margin: 0; max-width: 68ch; }
+code { font-family: var(--f-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+.refs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.ref { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ref .k { font-family: var(--f-mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.ref .v { font-weight: 600; }
+.ref .d { font-size: 13.5px; color: var(--muted); }
+.table-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+tr:last-child td { border-bottom: 0; }
+thead th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 500; }
+tbody th { font-weight: 600; white-space: nowrap; }
+ol.findings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: f; }
+ol.findings li { counter-increment: f; display: grid; grid-template-columns: 2.2em 1fr; gap: 4px 10px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+ol.findings li::before { content: counter(f); font-family: var(--f-mono); color: var(--accent); font-weight: 500; grid-row: span 2; }
+.ftitle { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 600; }
+.ftext { min-width: 0; }
+.chip { font-family: var(--f-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; font-weight: 500; }
+.chip.hit { background: var(--warn-bg); color: var(--warn-fg); }
+.chip.ok { background: var(--ok-bg); color: var(--ok-fg); }
+.chip.ref2 { background: var(--code-bg); color: var(--muted); }
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; max-width: 70ch; }
+.note { font-size: 13.5px; color: var(--muted); border-left: 2px solid var(--rule); padding-left: 12px; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.step { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.step .k { font-family: var(--f-mono); font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 16px; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">NuttX on Kria KV260 · Cortex-R5F · 2026-10-16</div>
+    <h1>Two ports of NuttX to the KV260 RPU</h1>
+    <p class="lede">A comparison of the upstream-style <code>kv260-rpu</code> branch with the month-long <code>zynqmpsoc-r5</code> + PX4 effort, and what the second one learned on real silicon that the first still needs.</p>
+  </header>
+
+  <section>
+    <h2>Where each one lives</h2>
+    <div class="refs">
+      <div class="ref">
+        <span class="k">Ours</span>
+        <span class="v"><code>kv260-rpu</code></span>
+        <span class="d">nuttx, one commit <code>5c47b2f823</code> on apache master. Chip <code>arch/arm/src/zynqmp-rpu</code>, board <code>boards/arm/zynqmp-rpu/kv260-rpu</code>.</span>
+      </div>
+      <div class="ref">
+        <span class="k">Theirs · NuttX</span>
+        <span class="v"><code>fork/zynqmpsoc-r5</code></span>
+        <span class="d">33 commits, Jun 30 – Aug 5, on PX4's NuttX 10.3 fork (from <code>d147b76c86</code>). Chip <code>arch/arm/src/zynqr5</code>.</span>
+      </div>
+      <div class="ref">
+        <span class="k">Theirs · PX4</span>
+        <span class="v"><code>origin/zynq-mpsoc</code></span>
+        <span class="d"><code>~/dev/PX4-ZynqMPSoC</code>, board <code>boards/amd/kria-kv260</code>, HRT in <code>platforms/nuttx/src/px4/amd/zynqr5/hrt</code>. Local checkout trails the remote by a month.</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Side by side</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th></th><th>kv260-rpu (ours)</th><th>zynqmpsoc-r5 + PX4 (theirs)</th></tr></thead>
+        <tbody>
+          <tr><th>Base</th><td>Upstream apache/nuttx master</td><td>PX4 NuttX 10.3 fork; not upstreamable as-is</td></tr>
+          <tr><th>Chip layer</th><td><code>zynqmp-rpu</code>, derived from TMS570, Xilinx register headers (<code>XTTCPS_*</code>, Cadence UART)</td><td><code>zynqr5</code>, written from scratch, raw addresses inline</td></tr>
+          <tr><th>Memory</th><td>Lockstep, 256 KB TCM, everything in TCM</td><td>Split mode. ATCM 64 KB holds a trampoline and hot code (hrt, EKF covariance); the rest runs from a 2 MB DDR carveout at <code>0x1ED00000</code></td></tr>
+          <tr><th>Boot</th><td>Raw reset-release writes in Xilinx QEMU</td><td>Linux remoteproc on the board</td></tr>
+          <tr><th>Validated on</th><td>Xilinx QEMU 8.1: NSH and <code>ostest</code> pass</td><td>Real KV260: PX4 SIH, MAVLink over rpmsg-uart, params over rpmsgfs, logs over MAVLink</td></tr>
+          <tr><th>Build</th><td>Make and CMake</td><td>Make only</td></tr>
+          <tr><th>Code shape</th><td>One clean commit in upstream style</td><td>~3.4k lines with debug breadcrumbs written to fixed DDR scratch addresses throughout</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>On the Six Steps plan, theirs is about five steps ahead: hardware, then DDR + MPU + caches, then RPMsg, then PX4. Ours is the one that could go upstream.</p>
+  </section>
+
+  <section>
+    <h2>Hardware findings to carry over</h2>
+    <p class="note">These come from the other session's commits and notes, measured on real silicon. Verify each against UG1085 or the board before relying on it.</p>
+    <ol class="findings">
+      <li>
+        <div class="ftitle">UART0 is electrically dead on the KV260 <span class="chip hit">Affects us</span></div>
+        <div class="ftext">No MIO pin, and the FSBL never enables its clock (<code>CRL_APB_UART0_REF_CTRL</code>, <code>0xFF5E0074</code>). UART1 is the USB-UART but it is Linux's console (ttyPS1). Our defconfig puts the console on UART0, so expect no output on hardware. They kept UART0 as a dummy console and did real I/O over rpmsg.</div>
+      </li>
+      <li>
+        <div class="ftitle">TTC ownership <span class="chip hit">Affects us</span></div>
+        <div class="ftext">TTC0 belongs to Linux (<code>ttc-pwm</code>, <code>pwmchip0</code>); our tick uses TTC0 (<code>zynqmp_rpu_timerisr.c:50</code>). TTC2 and TTC3 have their clocks gated in CRL_APB and never count. TTC1 is the usable one: counter 0 for the tick, counter 1 for an HRT. A read-modify-write on CRL_APB to ungate clocks once forced a power cycle.</div>
+      </li>
+      <li>
+        <div class="ftitle">RPU GIC state survives remoteproc stop/start <span class="chip hit">Affects us</span></div>
+        <div class="ftext">An image killed between IAR and EOIR leaves an interrupt active, which pins RPR and blocks every later interrupt. They clear it in <code>up_irqinitialize</code> by walking <code>GICD_ISACTIVER</code>, writing EOI per set bit, then <code>GICD_ICACTIVER</code>. Ours does not.</div>
+      </li>
+      <li>
+        <div class="ftitle">GIC writes do stick <span class="chip ref2">Skip this path</span></div>
+        <div class="ftext">They spent about two weeks on "discarded GIC writes" (XPPU/XMPU, security banking) and closed it as a false alarm on 2026-07-21.</div>
+      </li>
+      <li>
+        <div class="ftitle">IPI wiring for RPMsg <span class="chip ref2">RPMsg step</span></div>
+        <div class="ftext">RPU0 channel at <code>0xFF310000</code>, inbound on RPU GIC IRQ 65 (SPI 33). The kick bit is 24, the PL0 slot, because Xilinx's device tree gives remoteproc the PL0 mailbox. Answer every kick with a TRIG write, or TF-A stops re-enabling delivery on the A53 side.</div>
+      </li>
+      <li>
+        <div class="ftitle">Caches and the MPU <span class="chip ref2">DDR step</span></div>
+        <div class="ftext">I-cache alone gained nothing measurable. The D-cache took the EKF2 update from 2533 to 500 µs and CPU load from about 95% to 40%. MPU regions must be non-shareable or the R5 treats them as uncached. The resource table, trace ring and vrings must be Strongly-Ordered, since nothing in rptun does cache maintenance.</div>
+      </li>
+      <li>
+        <div class="ftitle">Two Kconfig traps <span class="chip ok">Ours is fine</span></div>
+        <div class="ftext"><code>CONFIG_RAM_SIZE</code> is an <code>int</code>, so a hex value parses as 0; ours is decimal. Their <code>TTC_INTERVAL</code> overflowed 32 bits and ran the tick 26× fast; ours divides first and also applies the <code>-1</code> for INTERVAL + 1.</div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Weak spots in theirs</h2>
+    <ul class="plain">
+      <li>Generic drivers patched under <code>#ifdef CONFIG_ZYNQR5_RPTUN</code>: <code>drivers/rptun/rptun.c</code> gains 224 lines (polling fallback, <code>dsb</code> everywhere), plus <code>serial/uart_rpmsg.c</code>, <code>syslog_rpmsg.c</code> and <code>fs/rpmsgfs</code>. Upstream would reject these. The polled IPI in <code>up_idle</code> is left over from the GIC false alarm and is probably unnecessary now.</li>
+      <li>Shared armv7-r files changed for every chip: <code>arm_head.S</code> force-defines <code>CPU_DCACHE_DISABLE</code>, <code>HEAD_ASRC</code> moved to <code>CMN_ASRCS</code>, an <code>addrenv.h</code> stub added. One change is worth taking: building <code>arm_mpu.c</code> when <code>CONFIG_ARM_MPU</code> is set, not only under <code>BUILD_PROTECTED</code>.</li>
+      <li>No board directory inside NuttX. The board exists only in PX4's tree, so plain NuttX has no defconfig to build.</li>
+      <li>No QEMU path, so every change needs the hardware to test.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Recommendation</h2>
+    <p>Keep <code>kv260-rpu</code> as the base. Treat theirs as a reference, not a merge source.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="k">Before the board</span>
+        <span>Move the tick to TTC1 counter 0. Add the stale-active-IRQ clear. Plan for no UART0 output: use JTAG/xsdb or a memory breadcrumb until RPMsg works.</span>
+      </div>
+      <div class="step">
+        <span class="k">DDR, MPU, caches</span>
+        <span>Reuse their split-mode layout and the MPU region list from <code>zynqr5_start.c</code> as hardware-proven facts.</span>
+      </div>
+      <div class="step">
+        <span class="k">RPMsg</span>
+        <span>Port <code>zynqr5_rsc.c</code> and the IPI notify/ISR logic, without the <code>rptun.c</code> polling changes.</span>
+      </div>
+    </div>
+    <p class="note">Housekeeping in ours: <code>board.h</code> still carries TMS570 leftovers (<code>BOARD_ASWAIT/RWAIT/EWAIT</code>, <code>BOARD_PINMUX_INITIALIZER</code>, the GIOA7 button, LED D11), and <code>zynqmp_rpu_irq_delete.h</code> is untracked.</p>
+  </section>
+
+  <footer>Compiled 2026-10-16 from <code>kv260-rpu@5c47b2f823</code>, <code>fork/zynqmpsoc-r5@f4379c94e7</code> and <code>PX4-ZynqMPSoC origin/zynq-mpsoc@17099b1da5</code>.</footer>
+</div>
