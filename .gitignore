@@ -9,3 +9,19 @@ scripts/stack_*.txt
 
 # Vendor datasheets (AMD/Arm, not redistributable)
 references/
+
+# PetaLinux: BSP installer and SD card images (the project's own
+# .gitignore covers build/, images/linux/ and pre-built/linux/)
+PetaLinux/*.bsp
+PetaLinux/*.zip
+*.wic
+*.wic.xz
+
+# Vivado-generated outputs
+*.cache/
+*.gen/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.Xil/
+*.log.old

@@ -1,0 +1,120 @@
+/include/ "system-conf.dtsi"
+/ {
+	/*
+	 * OpenAMP: A53 (Linux, host) <-> R5 cluster in LOCKSTEP mode running PX4 (NuttX).
+	 * Based on the nodes lopper generated in images/linux/openamp-lopper-output.dtb
+	 * for this hardware (IPI7 = APU host channel, IPI1 = RPU0).
+	 * In lockstep, RPU1 runs as RPU0's checker, so only RPU0's IPI, carve-outs and
+	 * remoteproc child are used, and the TCMs are combined (see &amba below).
+	 *
+	 * DDR layout for the R5 (all below 2 GiB, clear of pmu@7ff00000, the U-Boot
+	 * load addresses 0x00100000-0x1fffffff, and the default OpenAMP area):
+	 *
+	 *   0x3c000000 - 0x3dffffff  32 MiB  rproc0           PX4 code/data, R5 MPU: normal, cacheable
+	 *   0x3e000000 - 0x3e0fffff   1 MiB  shared window    R5 MPU: normal, NON-cacheable (one region)
+	 *     0x3e000000  16 KiB  rpu0vdev0vring0
+	 *     0x3e004000  16 KiB  rpu0vdev0vring1
+	 *     0x3e080000 512 KiB  rpu0vdev0buffer  (shared-dma-pool)
+	 *
+	 * Both ranges are power-of-two sized and size-aligned, so each maps to one R5 MPU
+	 * region. The R5 caches are not coherent with the A53s: either keep the shared
+	 * window non-cacheable in the R5 MPU, or have NuttX clean/invalidate the D-cache
+	 * around every vring/buffer access. Linux maps these no-map regions write-combine
+	 * (non-cacheable) on its side.
+	 *
+	 * Node names matter: the driver keys on "rpuXvdev0vringX" and "vdev0buffer".
+	 */
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+		rproc0: rproc0@3c000000 { no-map; reg = <0x0 0x3c000000 0x0 0x2000000>; };
+		rpu0vdev0vring0: rpu0vdev0vring0@3e000000 { no-map; reg = <0x0 0x3e000000 0x0 0x4000>; };
+		rpu0vdev0vring1: rpu0vdev0vring1@3e004000 { no-map; reg = <0x0 0x3e004000 0x0 0x4000>; };
+		rpu0vdev0buffer: rpu0vdev0buffer@3e080000 { compatible = "shared-dma-pool"; no-map; reg = <0x0 0x3e080000 0x0 0x80000>; };
+	};
+
+	/*
+	 * A53 side of the OpenAMP IPI link.
+	 * Parent = local agent IPI7 (A53 receives on GIC SPI 29 = IRQ ID 61).
+	 * Child  = remote agent IPI1 = RPU0 (bitmask 0x100). Its interrupt,
+	 * ZYNQMP_RPU_IRQ_IPI_CH1 = 65, is the one NuttX/PX4 must hook on the R5 side.
+	 * The A53 kicks RPU0 by writing bitmask 0x100 through IPI7; the R5 kicks back
+	 * with bitmask 0x1000000 (IPI7) through IPI1.
+	 */
+	zynqmp_ipi1 {
+		compatible = "xlnx,zynqmp-ipi-mailbox";
+		interrupt-parent = <&gic>;
+		interrupts = <0 29 4>;
+		xlnx,ipi-id = <7>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		ipi_mailbox_rpu0: ipi_mailbox_rpu0 {
+			compatible = "xlnx,zynqmp-ipi-dest-mailbox";
+			#mbox-cells = <1>;
+			/* IPI7->IPI1 req/resp buffers, then IPI1->IPI7 req/resp buffers */
+			reg = <0xff990600 0x20>, <0xff990620 0x20>, <0xff9900c0 0x20>, <0xff9900e0 0x20>;
+			reg-names = "local_request_region", "local_response_region",
+				    "remote_request_region", "remote_response_region";
+			xlnx,ipi-id = <1>;
+		};
+	};
+
+	rf5ss@ff9a0000 {
+		compatible = "xlnx,zynqmp-r5-remoteproc";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+		xlnx,cluster-mode = <0>;	/* lockstep: driver requires exactly one child */
+		reg = <0x0 0xff9a0000 0x0 0x10000>;
+
+		r5f_0 {
+			compatible = "xilinx,r5f";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges;
+			power-domains = <&zynqmp_firmware 7>;
+			sram = <&tcm_lockstep>;
+			memory-region = <&rproc0>, <&rpu0vdev0vring0>, <&rpu0vdev0vring1>, <&rpu0vdev0buffer>;
+			mboxes = <&ipi_mailbox_rpu0 0>, <&ipi_mailbox_rpu0 1>;
+			mbox-names = "tx", "rx";
+		};
+	};
+};
+
+/*
+ * Unified (combined) TCM for lockstep, as seen from the A53:
+ *   256 KiB at 0xffe00000 -> R5 address 0x00000
+ *   (ATCM 0A + 1A at R5 0x00000, BTCM 0B + 1B at R5 0x20000)
+ * One node, so one remoteproc carveout: zynqmp_r5_remoteproc loads each ELF
+ * segment into a single carveout, and the NuttX image is one segment that
+ * crosses 0x20000. The driver powers every bank listed in power-domains.
+ */
+&amba {
+	tcm_lockstep: psu_r5_tcm_lockstep@ffe00000 {
+		compatible = "mmio-sram";
+		reg = <0x0 0xffe00000 0x0 0x40000>;
+		power-domains = <&zynqmp_firmware 15>, <&zynqmp_firmware 16>,
+				<&zynqmp_firmware 17>, <&zynqmp_firmware 18>;
+	};
+};
+
+/*
+ * TTC2 (0xff130000, GIC SPI 42-44) belongs to the R5 (PX4 HRT/scheduler timer).
+ * Linux must not probe it. PMUFW does not gate TTC2 when unused (generic slave,
+ * no clocks), and its clock LPD_LSBUS stays on because UART1 uses it.
+ */
+&ttc2 {
+	status = "disabled";
+};
+
+/*
+ * UART1 (0xff010000, ttyPS1) is SHARED: Linux console + R5 output.
+ * Linux owns init (115200 8N1), clocks and the RX interrupt. The R5 side must
+ * not reset/reprogram the UART or enable its interrupt; only poll-write TX FIFO.
+ * Output from both sides will interleave.
+ */
+&uart1 {
+	status = "okay";
+};
