@@ -12,16 +12,16 @@ Trees:
 
 | Tree | Path | Branch |
 |---|---|---|
-| Port (source) | `~/dev/nuttxspace/nuttx`, `apps` | `kv260-rpu` |
-| PX4 | `~/dev/PX4-Autopilot` | `kv260-rpu`, fast-forwarded to `origin/main` |
-| PX4 NuttX fork (target) | `~/dev/PX4-Autopilot/platforms/nuttx/NuttX/nuttx`, `apps` | new `kv260-rpu`, from the submodule commit (`px4_firmware_nuttx-12.12.0+`) |
+| Port (source) | `NuttX/nuttx`, `NuttX/apps` | `kv260-rpu` |
+| PX4 | `PX4/PX4-Autopilot` | `kv260-rpu`, fast-forwarded to `upstream/main` |
+| PX4 NuttX fork (target) | `PX4/PX4-Autopilot/platforms/nuttx/NuttX/nuttx`, `apps` | new `kv260-rpu`, from the submodule commit (`px4_firmware_nuttx-12.12.0+`) |
 
 The first attempt on the 10.3 fork is kept on the fork's `kv260-rpu-10.3` branch (commits `40cbf36139`, `e1bf775bc3`, `1cca55e10c`, `22a68db6e6`).
 
 Standalone NuttX build in the fork (Make, as PX4 uses it):
 
 ```sh
-cd ~/dev/PX4-Autopilot/platforms/nuttx/NuttX/nuttx
+cd ~/dev/HITL_PX4_KV260-RPU_TB/PX4/PX4-Autopilot/platforms/nuttx/NuttX/nuttx
 make distclean && ./tools/configure.sh -l kv260-rpu:<config> && make -j$(nproc)
 ```
 
@@ -31,7 +31,7 @@ After a PX4 build (which configures and builds NuttX in this tree), use `make di
 
 ## Step 0: Set up the trees
 
-1. **Update PX4 to `origin/main` and sync the NuttX fork and apps submodules.** In `~/dev/PX4-Autopilot`, on `kv260-rpu`: `git fetch origin`, `git merge --ff-only origin/main`, `git submodule sync --recursive`, `git submodule update --init --recursive`. Check: the fork is at `8626377ce3` (`nuttx-12.12.0-80`), apps at `4319b404bc`.
+1. **Update PX4 to `upstream/main` and sync the NuttX fork and apps submodules.** In `PX4/PX4-Autopilot`, on `kv260-rpu`: `git fetch upstream`, `git merge --ff-only upstream/main`, `git submodule sync --recursive`, `git submodule update --init --recursive`. Check: the fork is at `8626377ce3` (`nuttx-12.12.0-80`), apps at `4319b404bc`.
 2. **Create `kv260-rpu` branches in the fork and apps, keeping the 10.3 work.** In the fork's `nuttx`: rename the old `kv260-rpu` to `kv260-rpu-10.3`, create `kv260-rpu` at the submodule commit. In `apps`: create `kv260-rpu` at the submodule commit.
 3. **Confirm an existing board, `raspberrypi_pico_default`, builds as a baseline.** Baseline PX4 build of an existing board: `make raspberrypi_pico_default`. Check: it links and prints the memory usage.
 
@@ -158,7 +158,7 @@ Step 5 can't run alone: the step 6 build compiles it, step 7.3 checks the HRT (6
 
 NuttX syslog goes to UART1 (`/dev/ttyS1`), PX4 shell output to `/dev/ttyRPMSG0`. The RPMsg console holds output until Linux writes a byte: `rcS` fills the 4 KiB TX buffer and blocks until then.
 
-0. **Prerequisites.** Add `EXE px4fw /home/kevin/dev/PX4-Autopilot/build/amd_kv260-rpu_default/amd_kv260-rpu_default.elf` to `scripts/kv260_deploy.conf`. PetaLinux with `rpmsg_tty` (bring-up step 8). Terminal open on UART1.
+0. **Prerequisites.** Add `EXE px4fw /home/kevin/dev/HITL_PX4_KV260-RPU_TB/PX4/PX4-Autopilot/build/amd_kv260-rpu_default/amd_kv260-rpu_default.elf` to `scripts/kv260_deploy.conf`. PetaLinux with `rpmsg_tty` (bring-up step 8). Terminal open on UART1.
 1. **Load the PX4 ELF through remoteproc and open the RPMsg console.** `scripts/kv260_deploy.sh -e px4fw`. Check:
    - Linux: `remoteproc0/state` reads `running`, `dmesg | grep 'creating channel'` shows `rpmsg-tty`, `/dev/ttyRPMSG0` exists
    - UART1: NuttX boots with no `ERROR` or assert

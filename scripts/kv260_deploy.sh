@@ -19,9 +19,10 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 CONF=${KV260_DEPLOY_CONF:-$SCRIPT_DIR/kv260_deploy.conf}
+REPO_DIR=$(dirname "$SCRIPT_DIR")
 
 MODE=local
-DEFAULT_EXE=/home/kevin/dev/PX4-Autopilot/platforms/nuttx/NuttX/nuttx/nuttx
+DEFAULT_EXE=$REPO_DIR/PX4/PX4-Autopilot/platforms/nuttx/NuttX/nuttx/nuttx
 PC_DIR=/home/kevin/dev/HITL_PX4_KV260-RPU_TB
 FW_NAME=nuttx-r5.elf
 RPROC=remoteproc0
@@ -61,12 +62,12 @@ sq() { printf "'%s'" "${1//\'/\'\\\'\'}"; }
 
 init_conf() {
     [[ -f $CONF ]] && return
-    cat >"$CONF" <<'EOF'
+    cat >"$CONF" <<EOF
 # kv260_deploy.sh config. The first BOARD and first PC are the defaults.
 # EXE   <name> <path>
 # BOARD <name> <user@host> [password]
 # PC    <name> <user@host> [password]
-EXE   px4    /home/kevin/dev/PX4-Autopilot/platforms/nuttx/NuttX/nuttx/nuttx
+EXE   px4    $REPO_DIR/PX4/PX4-Autopilot/platforms/nuttx/NuttX/nuttx/nuttx
 BOARD kv260  petalinux@10.11.0.77 qwe
 PC    eq     kevin@kevin-eq
 EOF

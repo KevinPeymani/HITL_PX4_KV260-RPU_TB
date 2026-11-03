@@ -1,9 +1,9 @@
 # KV260 RPU — PX4 Implementation Results
 
-Findings and recorded values behind `PX4_impl_steps.md` (same step numbers). Starting point: the NuttX port on `~/dev/nuttxspace/nuttx` branch `kv260-rpu` (commits `05db9de0b8`, `2e12be19a5`), which passes `NuttX/Documentation/board_bringup_steps.md` through step 8.
+Findings and recorded values behind `PX4_impl_steps.md` (same step numbers). Starting point: the NuttX port on `NuttX/nuttx` branch `kv260-rpu` (commits `05db9de0b8`, `2e12be19a5`), which passes `NuttX/Documentation/board_bringup_steps.md` through step 8.
 
 Sources:
-- upstream PX4 `~/dev/PX4-Autopilot`, `origin/main` `bfd0984db6` (2026-10-26)
+- upstream PX4 `PX4/PX4-Autopilot`, `upstream/main` `bfd0984db6` (2026-10-26)
 - its NuttX fork at `platforms/nuttx/NuttX/nuttx`, branch `px4_firmware_nuttx-12.12.0+`, commit `036f5946f8` (`nuttx-12.12.0-80`); apps `4319b404bc`
 
 Items marked **verify** aren't confirmed yet.

@@ -6,3 +6,7 @@
 	path = PX4/PX4-Autopilot
 	url = https://github.com/KevinPeymani/PX4-ZynqMPSoC.git
 	branch = kv260-rpu
+[submodule "NuttX/apps"]
+	path = NuttX/apps
+	url = https://github.com/apache/nuttx-apps.git
+	branch = master
