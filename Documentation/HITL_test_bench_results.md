@@ -1,6 +1,6 @@
 # KV260 RPU — HITL Test Bench Results
 
-Measurements from HITL flights of PX4 on the KV260 R5 (`PX4_impl_steps.md` step 8).
+Measurements from HITL flights of PX4 on the KV260 R5. Steps are in `HITL_test_bench_steps.md`; the HITL setup itself is step 8 of `PX4/Documentation/PX4_impl_steps.md`.
 
 Setup:
 - PX4 `kv260-rpu` `03c155bbaac`, `amd_kv260-rpu_default` (ddr 1,617,000 B), on R5_0 (lockstep), loaded by remoteproc
