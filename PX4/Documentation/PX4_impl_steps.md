@@ -187,26 +187,24 @@ NuttX syslog goes to UART1 (`/dev/ttyS1`), PX4 shell output to `/dev/ttyRPMSG0`.
    - `init/rc.board_mavlink`: `mavlink start -d /dev/ttyRPMSG1 -r 100000` (`set_hil_enabled()` streams `HIL_ACTUATOR_CONTROLS` only above 5000 B/s)
    - `rc.board_defaults`: `param set-default` `SYS_AUTOSTART 1001` (HIL quad X, in ROMFS with `PWM_OUT_SIM`; sets `SYS_HITL 1`, so `rcS` starts `sensors -h` and `pwm_out_sim -m hil`) and `SYS_DM_BACKEND 1` (dataman in RAM)
 3. **Build the flight image, check it fits in DDR, and load it.** Build, check the linker's `ddr:` line, deploy (`scripts/kv260_deploy.sh -e px4fw -y`). Check in nsh: `mavlink status` shows the instance on `/dev/ttyRPMSG1`; `param show SYS_HITL` is 1.
-4. **Gazebo Classic container (Ubuntu 22.04) on the PC.** `Tools/setup/ubuntu.sh` installs Gazebo Harmonic, which has no HITL, so the container installs Gazebo Classic 11 from Ubuntu's `gazebo` and `libgazebo-dev` packages. Docker and WSLg are on the WSL host.
-   - `Dockerfile`, kept outside the PX4 tree:
-     - `gazebo libgazebo-dev`
-     - the `sitl_gazebo-classic` build dependencies: `build-essential cmake ninja-build git`, Boost, `libopencv-dev`, `libeigen3-dev`, `libprotobuf-dev protobuf-compiler`, TinyXML, the GStreamer dev packages, `qtbase5-dev`
-     - PX4's `Tools/setup/requirements.txt`, `socat`
-     - a user with UID 1000, so build files on the mounted tree aren't owned by root
-   - `run.sh`:
-     - the PX4 tree mounted at the same path
+4. **Gazebo Classic container (Ubuntu 22.04) on the PC.** `Tools/setup/ubuntu.sh` installs Gazebo Harmonic, which has no HITL, so the container installs Gazebo Classic 11 from Ubuntu's `gazebo` and `libgazebo-dev` packages. Docker and WSLg are on the WSL host. The image is self-contained (HITL needs only the plugins, models and worlds, not PX4 SITL); no workspace folder is mounted. Files in `HITL_PX4_KV260-RPU_TB/Simulation/gazebo-classic/`:
+   - `Dockerfile`:
+     - `gazebo libgazebo-dev`, the `sitl_gazebo-classic` build dependencies, `python3-jinja2 python3-numpy` (model generation), `socat`, `mesa-utils`
+     - MAVLink C headers generated with `mavgen` into `/usr/local/include/mavlink`, from the `mavlink` commit PX4 pins (`src/modules/mavlink/mavlink`), dialect `common` (the firmware's)
+     - `PX4-SITL_gazebo-classic` cloned at the commit PX4 pins (`Tools/simulation/gazebo-classic/sitl_gazebo-classic`) into `/opt/sitl_gazebo-classic`, built with `-DSEND_ODOMETRY_DATA=ON`, targets `models_gen` and the plugins `iris_hitl` and `hitl_iris.world` load
+     - `serialDevice` in `iris_hitl.sdf` set to `/tmp/ttyKV260`
+     - Gazebo paths (`/usr/share/gazebo/setup.sh`, plugins, models) set for every shell; a user with the host UID (WSLg sockets)
+   - `run.sh` (`build`, `exec` for a second shell, `stop`):
      - `--network host` (TCP to the KV260, UDP 14550 to QGroundControl)
-     - WSLg display: `/tmp/.X11-unix`, `/mnt/wslg`, `DISPLAY`, `WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`
-     - GPU through `/dev/dxg` and `/usr/lib/wsl`; `LIBGL_ALWAYS_SOFTWARE=1` if rendering fails
-   - In the container: `DONT_RUN=1 make px4_sitl_default gazebo-classic` builds SITL and the plugins into `build/px4_sitl_default`. Don't build `px4_sitl_default` on the host too: the two toolchains would share its CMake cache.
+     - WSLg display: `/tmp/.X11-unix`, `/mnt/wslg`, `DISPLAY`, `WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir`
+     - GPU through `/dev/dxg` and `/usr/lib/wsl`; `SOFTWARE_GL=1 ./run.sh` renders with llvmpipe
    - Check:
-     - `gazebo --version` is 11
-     - `gazebo` opens an empty world in a WSLg window
-     - `build/px4_sitl_default/build_gazebo-classic/libgazebo_mavlink_interface.so` exists
+     - `./run.sh build` succeeds; in the container `gazebo --version` is 11
+     - `gazebo worlds/hitl_iris.world` shows the iris in a WSLg window
 5. **Bridge `/dev/ttyRPMSG1` to a serial device in the container.** The HITL plugin (`mavlink_interface`, `serialEnabled 1`) only opens a serial device.
    - KV260 Linux: `socat TCP-LISTEN:5760,reuseaddr FILE:/dev/ttyRPMSG1,raw,echo=0`
    - container: `socat PTY,link=/tmp/ttyKV260,raw,echo=0 TCP:<kv260>:5760`
-6. **Run Gazebo Classic in HITL mode.** In `models/iris_hitl/iris_hitl.sdf` set `serialDevice` to `/tmp/ttyKV260` (`baudRate` doesn't matter on a PTY); `source Tools/simulation/gazebo-classic/setup_gazebo.bash $(pwd) $(pwd)/build/px4_sitl_default`, then `gazebo Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/hitl_iris.world` (docs `simulation/hitl.md`). Gazebo serves QGroundControl on UDP 14550.
+6. **Run Gazebo Classic in HITL mode.** In the container (second shell: `./run.sh exec`), with the step 5 socat running: `gazebo worlds/hitl_iris.world` (docs `simulation/hitl.md`). The image already points `serialDevice` to `/tmp/ttyKV260` (`baudRate` doesn't matter on a PTY). Gazebo serves QGroundControl on UDP 14550.
 7. **Fly a simulated takeoff, hover and landing from QGroundControl.** Check:
    - the vehicle connects; the attitude follows Gazebo
    - arm, take off, hold position, land
