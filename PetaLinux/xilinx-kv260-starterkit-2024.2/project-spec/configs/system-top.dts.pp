@@ -1,25 +1,25 @@
-# 0 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts"
+# 0 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts"
 # 0 "<built-in>"
 # 0 "<command-line>"
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts"
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts"
 /dts-v1/;
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 1
-# 15 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi"
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/dma/xlnx-zynqmp-dpdma.h" 1
-# 16 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/gpio/gpio.h" 1
-# 17 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/arm-gic.h" 1
-# 9 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/arm-gic.h"
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/irq.h" 1
-# 10 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/arm-gic.h" 2
-# 18 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/irq.h" 1
-# 19 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/power/xlnx-zynqmp-power.h" 1
-# 20 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/reset/xlnx-zynqmp-resets.h" 1
-# 21 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 1
+# 15 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi"
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/dma/xlnx-zynqmp-dpdma.h" 1
+# 16 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/gpio/gpio.h" 1
+# 17 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/arm-gic.h" 1
+# 9 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/arm-gic.h"
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/irq.h" 1
+# 10 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/arm-gic.h" 2
+# 18 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/interrupt-controller/irq.h" 1
+# 19 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/power/xlnx-zynqmp-power.h" 1
+# 20 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/reset/xlnx-zynqmp-resets.h" 1
+# 21 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp.dtsi" 2
 
 / {
  compatible = "xlnx,zynqmp";
@@ -1621,11 +1621,11 @@
                 };
  };
 };
-# 3 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-clk-ccf.dtsi" 1
-# 11 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-clk-ccf.dtsi"
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/clock/xlnx-zynqmp-clk.h" 1
-# 12 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-clk-ccf.dtsi" 2
+# 3 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-clk-ccf.dtsi" 1
+# 11 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-clk-ccf.dtsi"
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/clock/xlnx-zynqmp-clk.h" 1
+# 12 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-clk-ccf.dtsi" 2
 / {
  pss_ref_clk: pss_ref_clk {
   bootph-all;
@@ -1918,8 +1918,8 @@
 &zynqmp_dp_snd_codec0 {
  clocks = <&zynqmp_clk 17>;
 };
-# 4 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/pl.dtsi" 1
+# 4 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/pl.dtsi" 1
 / {
  amba_pl: amba_pl {
   ranges;
@@ -1953,8 +1953,8 @@
   };
  };
 };
-# 5 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/pcw.dtsi" 1
+# 5 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/pcw.dtsi" 1
  &psu_cortexa53_0 {
   xlnx,psu-ep = <1>;
   xlnx,rable = <0>;
@@ -3802,7 +3802,7 @@
  &pinctrl0 {
   status = "okay";
  };
-# 6 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2
+# 6 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2
 / {
  board = "kv260_som_som240_1_connector_kv260_carrier_som240_1_connector";
  device_id = "xck26";
@@ -4294,20 +4294,20 @@
   #ranges-size-cells = <0x1>;
  };
 };
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-smk-k26-reva.dtsi" 1
-# 11 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-smk-k26-reva.dtsi"
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi" 1
-# 12 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi"
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/input/input.h" 1
-# 12 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/input/input.h"
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/input/linux-event-codes.h" 1
-# 13 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/input/input.h" 2
-# 13 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-smk-k26-reva.dtsi" 1
+# 11 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-smk-k26-reva.dtsi"
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi" 1
+# 12 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi"
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/input/input.h" 1
+# 12 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/input/input.h"
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/input/linux-event-codes.h" 1
+# 13 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/input/input.h" 2
+# 13 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi" 2
 
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/phy/phy.h" 1
-# 15 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi" 2
-# 1 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/pinctrl/pinctrl-zynqmp.h" 1
-# 16 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/phy/phy.h" 1
+# 15 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi" 2
+# 1 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/include/dt-bindings/pinctrl/pinctrl-zynqmp.h" 1
+# 16 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi" 2
 
 / {
  model = "ZynqMP SM-K26 Rev2/1/B/A";
@@ -4596,7 +4596,7 @@
    };
   };
  };
-# 314 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi"
+# 314 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-sm-k26-reva.dtsi"
 };
 
 &gpio {
@@ -4653,7 +4653,7 @@
   opp-hz = /bits/ 64 <333333333>;
  };
 };
-# 12 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-smk-k26-reva.dtsi" 2
+# 12 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/zynqmp-smk-k26-reva.dtsi" 2
 
 / {
  model = "ZynqMP SMK-K26 Rev2/1/B/A";
@@ -4666,4 +4666,4 @@
 &sdhci0 {
  status = "disabled";
 };
-# 498 "/home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2
+# 498 "/home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/hw-description/system-top.dts" 2

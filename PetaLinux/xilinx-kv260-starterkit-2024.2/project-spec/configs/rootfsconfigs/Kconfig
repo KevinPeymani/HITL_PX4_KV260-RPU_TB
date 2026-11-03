@@ -9306,7 +9306,7 @@ config Init-manager-sysvinit
 endchoice
 endmenu
 
-source /home/kevin/dev/petalinux-kv260/xilinx-kv260-starterkit-2024.2/project-spec/configs/rootfsconfigs/Kconfig.user
+source /home/kevin/dev/HITL_PX4_KV260-RPU_TB/PetaLinux/xilinx-kv260-starterkit-2024.2/project-spec/configs/rootfsconfigs/Kconfig.user
 
 menu "PetaLinux RootFS Settings"
 config ADD_EXTRA_USERS
