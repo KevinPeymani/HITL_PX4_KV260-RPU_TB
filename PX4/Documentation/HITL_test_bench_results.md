@@ -93,3 +93,50 @@ Setup:
 - From Gazebo (sysid 1, compid 200): 282,048 messages, 256 lost (0.09 %); `HIL_SENSOR` (107) shown at 338.3 Hz while `vehicle_imu` runs at 249.9 Hz, so the per-message rate display is not a rate measurement; `HIL_GPS` (113); heartbeat 1.0 Hz.
 - From QGroundControl (sysid 255, compid 190): 1,361 messages, 156,742 "lost". PX4 counts a loss for each skipped sequence number per sender: QGC's numbers jump by about 115 between the messages that arrive, so QGC sends messages that never reach PX4 (dropped in Gazebo's relay or sent on another link, **verify**). This gives the overall `rx loss` of 35.6 %; the flight is unaffected. Its heartbeat is shown at 298.3 Hz, last 0.87 s ago (same display quirk).
 - MAVLink ping (PX4 to QGroundControl and back, through RPMsg, Linux, both socats, TCP, Gazebo's relay and UDP): last 1.47 ms, mean 2.16 ms, min 0.62 ms, max 8.31 ms, 0 dropped.
+
+## uORB traffic during hover (`uorb top`, 2026-11-03)
+
+113 topics, 6310 publications/s, 443.1 kB/s. Topics with traffic (rate in Hz, #Q = queue length, size in bytes):
+
+| Topic | Subs | Rate | #Q | Size |
+|---|---|---|---|---|
+| `actuator_motors` | 1 | 250 | 1 | 72 |
+| `actuator_outputs` | 1 | 250 | 1 | 80 |
+| `actuator_outputs_sim` | 1 | 250 | 1 | 80 |
+| `battery_status` | 2 | 250 | 1 | 168 |
+| `sensor_accel` | 4 | 250 | 8 | 48 |
+| `sensor_combined` | 1 | 250 | 1 | 48 |
+| `sensor_gyro` | 4 | 250 | 8 | 48 |
+| `sensors_status_imu` | 1 | 250 | 1 | 96 |
+| `vehicle_acceleration` | 1 | 250 | 1 | 32 |
+| `vehicle_angular_velocity` | 5 | 250 | 1 | 40 |
+| `vehicle_attitude` | 9 | 250 | 1 | 56 |
+| `vehicle_imu` | 2 | 250 | 1 | 64 |
+| `vehicle_rates_setpoint` | 2 | 250 | 1 | 40 |
+| `vehicle_thrust_setpoint` | 4 | 250 | 1 | 32 |
+| `vehicle_torque_setpoint` | 1 | 250 | 1 | 32 |
+| `control_allocator_status` | 2 | 137 | 1 | 56 |
+| `estimator_status` | 6 | 101 | 1 | 136 |
+| `vehicle_attitude_setpoint` | 3 | 101 | 1 | 40 |
+| `vehicle_global_position` | 9 | 101 | 1 | 72 |
+| `vehicle_local_position` | 21 | 101 | 1 | 192 |
+| `vehicle_local_position_setpoint` | 3 | 101 | 1 | 64 |
+| `hover_thrust_estimate` | 3 | 100 | 1 | 48 |
+| `sensor_mag` | 2 | 84 | 4 | 48 |
+| `trajectory_setpoint` | 2 | 50 | 1 | 64 |
+| `vehicle_constraints` | 1 | 50 | 1 | 24 |
+| `sensor_baro` | 3 | 41 | 4 | 40 |
+| `sensors_status_baro` | 1 | 41 | 1 | 64 |
+| `vehicle_air_data` | 5 | 21 | 1 | 40 |
+| `vehicle_magnetometer` | 1 | 14 | 1 | 40 |
+| `vehicle_imu_status` | 4 | 9 | 1 | 136 |
+| `sensors_status_gnss` | 3 | 8 | 1 | 120 |
+| `sensor_gnss` | 3 | 6 | 1 | 136 |
+| `vehicle_gnss` | 7 | 6 | 1 | 176 |
+| `geofence_result` | 1 | 4 | 1 | 16 |
+| `telemetry_status` | 2 | 3 | 1 | 96 |
+| `actuator_armed`, `cpuload`, `failsafe_flags`, `failure_detector_status`, `navigator_status`, `vehicle_control_mode`, `vehicle_status` | 1–27 | 2 | 1 | 16–104 |
+| `estimator_sensor_bias`, `estimator_status_flags`, `rtl_time_estimate`, `vehicle_land_detected` | 1–14 | 1 | 1 | 24–120 |
+
+- IMU path (`sensor_gyro`/`sensor_accel` → `vehicle_imu` → `vehicle_attitude`) and the rate loop (`vehicle_rates_setpoint` → torque/thrust setpoints → `actuator_motors` → `actuator_outputs_sim`) at 250 Hz; EKF outputs (`estimator_status`, `vehicle_local_position`) and the attitude/position setpoints at 101 Hz.
+- Most subscribers: `vehicle_status` (27, at 2 Hz), `vehicle_local_position` (21), `vehicle_control_mode` and `vehicle_land_detected` (14).
