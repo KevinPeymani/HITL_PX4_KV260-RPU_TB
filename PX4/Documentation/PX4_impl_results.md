@@ -202,6 +202,9 @@ From a trial (2026-10-23) on `8626377ce3` (same tree as `036f5946f8`): the fork 
   - At the pinned commits (`sitl_gazebo-classic` `f835e07`, `mavlink` `2e2b6af`), `gazebo_camera_manager_plugin` doesn't compile: `VIDEO_STREAM_STATUS` gained `vfov`. The image builds only `models_gen` and the plugins `iris_hitl` / `hitl_iris.world` load (mavlink interface, motor model, multirotor base, IMU, GPS, magnetometer, barometer, groundtruth).
   - Headless check with a socat PTY pair standing in for the KV260: `gzserver` with `hitl_iris.world` opens `/tmp/ttyKV260` and sends MAVLink v2 (274 KB, 6153 `0xfd` markers in about 10 s).
   - GUI: the D3D12 GPU path doesn't render in the 22.04 container; `SOFTWARE_GL=1` (llvmpipe) shows the iris.
+  - `run.sh` detects WSL or native Ubuntu; checked on WSL only, the Ubuntu mode (X11, `/dev/dri`) is untested.
+  - The plugin opens the serial device once, at load: if `/tmp/ttyKV260` is missing it prints `Serial port closed!` for every message and never retries.
+- **8.5** (2026-11-03): the PetaLinux image has no `socat` (`CONFIG_socat` not set); installed with `dnf` for now.
 
 ---
 
