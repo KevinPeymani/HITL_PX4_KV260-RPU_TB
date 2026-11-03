@@ -1,6 +1,8 @@
 # KV260 RPU — HITL Test Bench Steps
 
-Measure the HITL loop of PX4 on the KV260 R5 with hardware timestamps: tap points on the APU and the R5 drive PL pins, and a PL block timestamps every edge. Measurements and recorded values are in `HITL_test_bench_results.md`.
+**Status: draft, still to be approved.**
+
+Measure the HITL loop of PX4 on the KV260 R5 with hardware timestamps: tap points on the APU and the R5 drive PL pins, and a PL block timestamps every edge. The experiments it serves (E0–E5) are in `HITL_test_bench_experiments.md`; measurements and recorded values are in `HITL_test_bench_results.md`.
 
 Starting point, implemented with the earlier step files (each with its results file next to it):
 
