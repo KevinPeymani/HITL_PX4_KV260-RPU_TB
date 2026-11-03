@@ -206,16 +206,17 @@ NuttX syslog goes to UART1 (`/dev/ttyS1`), PX4 shell output to `/dev/ttyRPMSG0`.
      - `gazebo worlds/hitl_iris.world` shows the iris
 5. **Bridge `/dev/ttyRPMSG1` to a serial device in the container.** The HITL plugin (`mavlink_interface`, `serialEnabled 1`) only opens a serial device, once, when Gazebo loads it; start in this order: board, container socat, Gazebo (step 6). `raw,echo=0` keeps both ttys from rewriting MAVLink bytes; `nodelay` turns off Nagle on the TCP leg. `KV260_IP` is the board's address on the PC's link.
    0. **Prerequisite: `socat` on the board.** Enable `CONFIG_socat` in the PetaLinux `rootfs_config` and rebuild the image, or `sudo dnf install socat` until the next reflash.
-   1. **KV260 Linux** (PX4 running, nothing else holding `/dev/ttyRPMSG1`): `sudo socat -d -d TCP-LISTEN:5760,reuseaddr,nodelay FILE:/dev/ttyRPMSG1,raw,echo=0`. It serves one connection, then exits; restart it for each session.
-   2. **Container, first shell** (`./run.sh`): `socat -d -d PTY,link=/tmp/ttyKV260,raw,echo=0 TCP:$KV260_IP:5760,nodelay`. Check: the board's socat logs the connection.
-   3. **Check the bridge** in a second shell (`./run.sh exec`). PX4 sends nothing until Linux has sent a byte (step 1):
+   1. **KV260 Linux** (PX4 running, nothing else holding `/dev/ttyRPMSG1`): `sudo socat -d -d TCP-LISTEN:5760,reuseaddr,nodelay FILE:/dev/ttyRPMSG1,raw,echo=0`. It serves one connection, then exits; restart it for each session. PX4 sends nothing until Linux has sent a byte (step 1): after a fresh PX4 start, first `echo | sudo tee /dev/ttyRPMSG1 >/dev/null`.
+   2. **Container, first shell** (`./run.sh`; the prompt is `px4@…:/opt/sitl_gazebo-classic`): `socat -d -d PTY,link=/tmp/ttyKV260,raw,echo=0 TCP:$KV260_IP:5760,nodelay`. It must run in the container: the container's `/tmp` is not the host's, and Gazebo opens the PTY there. Check:
+      - the board's socat logs the connection
+      - `ls -l /tmp/ttyKV260` in the container is a link to `/dev/pts/N`; a regular file there (for example from a redirect while the link was missing) blocks the link: stop socat, `rm /tmp/ttyKV260`, restart it
+   3. **Check the bridge** in a second shell (`./run.sh exec`). socat sets the PTY raw for the read (a plain `cat` or `od` would apply the default terminal mode, where `0x04` in the MAVLink stream ends the read):
       ```sh
-      printf '\0' > /tmp/ttyKV260
-      timeout 3 cat /tmp/ttyKV260 | od -An -tx1 -v | tr ' ' '\n' | grep -c '^fd$'
+      socat -u OPEN:/tmp/ttyKV260,raw,echo=0 STDOUT | od -An -tx1 -v
       ```
-      Check: the count of MAVLink v2 start bytes is well above 0; in nsh, `mavlink status` shows a non-zero tx rate on `/dev/ttyRPMSG1`.
+      Check: hex scrolls continuously with regular `fd` (MAVLink v2 start byte); in nsh, `mavlink status` on `/dev/ttyRPMSG1` shows tx around 2000 B/s and `txerr` 0. Stop it with Ctrl-C, then restart both socats before step 6.
    4. **Latency baseline.** `ping -c 20 $KV260_IP` from the PC; note the round trip for step 8.
-6. **Run Gazebo Classic in HITL mode.** In the container's second shell, with the step 5 socats running: `gazebo worlds/hitl_iris.world` (docs `simulation/hitl.md`). The image already points `serialDevice` to `/tmp/ttyKV260` (`baudRate` doesn't matter on a PTY). Check: Gazebo prints `Opened serial device /tmp/ttyKV260` and no `Serial port closed!`. If the TCP link drops, socat exits and removes the PTY: restart the board socat, the container socat, then Gazebo. Gazebo serves QGroundControl on UDP 14550; QGroundControl on the same PC connects without changes.
+6. **Run Gazebo Classic in HITL mode.** In the container's second shell, with the step 5 socats running: `gazebo worlds/hitl_iris.world` (docs `simulation/hitl.md`). The image already points `serialDevice` to `/tmp/ttyKV260` (`baudRate` doesn't matter on a PTY). Check: Gazebo prints `Opened serial device /tmp/ttyKV260` and no `Serial port closed!` (`Error opening serial device`: the socat isn't running in this container, or `/tmp/ttyKV260` is a regular file, step 5.2). If the TCP link drops, socat exits and removes the PTY: restart the board socat, the container socat, then Gazebo. Gazebo serves QGroundControl on UDP 14550; QGroundControl on the same PC connects without changes.
 7. **Fly a simulated takeoff, hover and landing from QGroundControl.** Check:
    - the vehicle connects; the attitude follows Gazebo
    - arm, take off, hold position, land
