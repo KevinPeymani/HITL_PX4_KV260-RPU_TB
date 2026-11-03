@@ -2,17 +2,7 @@
 # Start the Gazebo Classic HITL container on a WSL or native Ubuntu host.
 # The image holds the PX4 plugins, models and worlds; no host folder is mounted.
 #
-# Usage:
-#   run.sh           build the image if missing, start the container, open a shell
-#   run.sh exec      open another shell in the running container
-#   run.sh build     rebuild the image
-#   run.sh stop      stop the container (it is removed on stop, as is exiting the first shell)
-#   run.sh help      show the help
-#
-# Environment:
-#   HOST_MODE=wsl|ubuntu   override the host detection
-#   SOFTWARE_GL=1          render with llvmpipe instead of the GPU
-#
+# Usage: run.sh [options] [command]; run.sh --help lists them.
 # In the container: gazebo worlds/hitl_iris.world
 
 set -euo pipefail
@@ -37,7 +27,7 @@ detect_host() {
 
 usage() {
     cat <<'EOF'
-Usage: run.sh [command]
+Usage: run.sh [options] [command]
 
 Gazebo Classic 11 container for PX4 HITL with the KV260 RPU.
 
@@ -46,11 +36,16 @@ Commands:
   exec      open another shell in the running container
   build     rebuild the image
   stop      stop the container (it is also removed when the first shell exits)
-  help      show this help (also -h, --help)
+  help      show this help
 
-Environment:
-  HOST_MODE=wsl|ubuntu   override the host detection (default: from the kernel release)
-  SOFTWARE_GL=1          render with llvmpipe instead of the GPU
+Options:
+  -m, --host-mode MODE   wsl or ubuntu (default: detected from the kernel release)
+  -s, --software-gl      render with llvmpipe instead of the GPU
+  -h, --help             show this help
+
+Examples:
+  ./run.sh -s                  start with software rendering
+  ./run.sh --host-mode ubuntu  start, forcing the native Ubuntu setup
 
 HITL session (step 8.5-8.6):
   board:        sudo socat -d -d TCP-LISTEN:5760,reuseaddr,nodelay FILE:/dev/ttyRPMSG1,raw,echo=0
@@ -61,11 +56,43 @@ HITL session (step 8.5-8.6):
 EOF
 }
 
-case "${1:-}" in
-    help|-h|--help)
-        usage
-        exit 0
-        ;;
+HOST_MODE=""
+SOFTWARE_GL=0
+COMMAND=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -m|--host-mode)
+            [[ $# -ge 2 ]] || { echo "$1 needs a value (wsl or ubuntu)" >&2; exit 1; }
+            HOST_MODE=$2
+            shift 2
+            ;;
+        --host-mode=*)
+            HOST_MODE=${1#*=}
+            shift
+            ;;
+        -s|--software-gl)
+            SOFTWARE_GL=1
+            shift
+            ;;
+        -h|--help|help)
+            usage
+            exit 0
+            ;;
+        -*)
+            echo "unknown option: $1" >&2
+            usage >&2
+            exit 1
+            ;;
+        *)
+            [[ -z "$COMMAND" ]] || { echo "only one command: $COMMAND, $1" >&2; exit 1; }
+            COMMAND=$1
+            shift
+            ;;
+    esac
+done
+
+case "$COMMAND" in
     build)
         build_image
         exit 0
@@ -87,6 +114,11 @@ esac
 
 HOST_MODE=${HOST_MODE:-$(detect_host)}
 
+if [[ "$HOST_MODE" != wsl && "$HOST_MODE" != ubuntu ]]; then
+    echo "unknown host mode: $HOST_MODE (wsl or ubuntu)" >&2
+    exit 1
+fi
+
 if [[ -z "${DISPLAY:-}" ]]; then
     echo "DISPLAY is not set: start from a desktop session (or WSLg)" >&2
     exit 1
@@ -100,7 +132,7 @@ case "$HOST_MODE" in
         # The host's XDG_RUNTIME_DIR points into /mnt/wslg, so pass the real directory.
         DISPLAY_ARGS+=(-v /mnt/wslg:/mnt/wslg -e WAYLAND_DISPLAY -e PULSE_SERVER
                        -e XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir)
-        if [[ "${SOFTWARE_GL:-0}" != 1 ]]; then
+        if [[ "$SOFTWARE_GL" != 1 ]]; then
             GPU_ARGS=(--device /dev/dxg -v /usr/lib/wsl:/usr/lib/wsl:ro
                       -e LD_LIBRARY_PATH=/usr/lib/wsl/lib -e GALLIUM_DRIVER=d3d12)
         fi
@@ -112,7 +144,7 @@ case "$HOST_MODE" in
         else
             echo "xhost not found (apt install x11-xserver-utils); the X server may refuse the container" >&2
         fi
-        if [[ "${SOFTWARE_GL:-0}" != 1 && -d /dev/dri ]]; then
+        if [[ "$SOFTWARE_GL" != 1 && -d /dev/dri ]]; then
             GPU_ARGS=(--device /dev/dri)
             # The render nodes belong to the render/video groups; give the container user those GIDs.
             for gid in $(stat -c %g /dev/dri/* 2>/dev/null | sort -u); do
@@ -126,7 +158,7 @@ case "$HOST_MODE" in
         ;;
 esac
 
-if [[ "${SOFTWARE_GL:-0}" == 1 ]]; then
+if [[ "$SOFTWARE_GL" == 1 ]]; then
     GPU_ARGS+=(-e LIBGL_ALWAYS_SOFTWARE=1)
 fi
 
@@ -134,7 +166,7 @@ if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
     build_image
 fi
 
-echo "host: $HOST_MODE, GL: $([[ "${SOFTWARE_GL:-0}" == 1 ]] && echo software || echo GPU)"
+echo "host: $HOST_MODE, GL: $([[ "$SOFTWARE_GL" == 1 ]] && echo software || echo GPU)"
 
 exec docker run --rm -it --name "$CONTAINER" \
     --network host \

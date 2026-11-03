@@ -196,13 +196,13 @@ NuttX syslog goes to UART1 (`/dev/ttyS1`), PX4 shell output to `/dev/ttyRPMSG0`.
      - Gazebo paths (`/usr/share/gazebo/setup.sh`, plugins, models) set for every shell; a user with the host UID (X server and GPU access)
    - `run.sh` (`build`, `exec` for a second shell, `stop`):
      - `--network host` (TCP to the KV260, UDP 14550 to QGroundControl on the same PC)
-     - host detected from the kernel release (`microsoft` → WSL, else Ubuntu); `HOST_MODE=wsl|ubuntu` overrides
+     - host detected from the kernel release (`microsoft` → WSL, else Ubuntu); `-m`/`--host-mode wsl|ubuntu` overrides
      - Ubuntu: X11 display (`/tmp/.X11-unix`, `DISPLAY`) after `xhost +SI:localuser:$USER` (needs `x11-xserver-utils`); GPU through `/dev/dri`, with `--group-add` for the GIDs owning the render nodes
      - WSL: WSLg display (`/tmp/.X11-unix`, `/mnt/wslg`, `DISPLAY`, `WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir`); GPU through `/dev/dxg` and `/usr/lib/wsl`
-     - `SOFTWARE_GL=1 ./run.sh` renders with llvmpipe
+     - `./run.sh -s` (`--software-gl`) renders with llvmpipe; `./run.sh --help` lists the commands and options
    - Check:
      - `./run.sh build` succeeds; `./run.sh` prints the detected host; in the container `gazebo --version` is 11
-     - `glxinfo -B` names the GPU driver, not `llvmpipe` (else use `SOFTWARE_GL=1`)
+     - `glxinfo -B` names the GPU driver, not `llvmpipe` (else use `-s`)
      - `gazebo worlds/hitl_iris.world` shows the iris
 5. **Bridge `/dev/ttyRPMSG1` to a serial device in the container.** The HITL plugin (`mavlink_interface`, `serialEnabled 1`) only opens a serial device, once, when Gazebo loads it; start in this order: board, container socat, Gazebo (step 6). `raw,echo=0` keeps both ttys from rewriting MAVLink bytes; `nodelay` turns off Nagle on the TCP leg. `KV260_IP` is the board's address on the PC's link.
    0. **Prerequisite: `socat` on the board.** Enable `CONFIG_socat` in the PetaLinux `rootfs_config` and rebuild the image, or `sudo dnf install socat` until the next reflash.
