@@ -81,8 +81,9 @@ Setup:
 | `mavlink`: tx run elapsed | 331,200 | 303 µs | 44 µs | 7963 µs | 378 µs |
 
 - Control latency (gyro sample to actuator output, inside PX4): 0.77 ms average, 4.6 ms worst.
+- Later in the same hover (534,982 rate-controller cycles): control latency 775 µs avg, EKF update 428 µs avg; every maximum unchanged (control latency 4579 µs, EKF 1237 µs, `mavlink` tx run interval 15,916 µs), so the worst cases all came before the first `perf` and the averages don't drift.
 - No late or overrun counters. `ekf2: IMU message missed` 0; `mavlink`: `send_bytes error` 0, `forwarding error` 0, `STATUSTEXT missed messages` 0.
-- `vehicle_imu`: one gyro and one accel data gap; `vehicle_angular_velocity`: one gyro selection change and filter reset. **verify** whether these happen once at Gazebo start or grow during flight.
+- `vehicle_imu`: one gyro and one accel data gap; `vehicle_angular_velocity`: one gyro selection change and filter reset. They happened once, before the first `perf`, and didn't recur: a later `perf`, about 18 minutes on (534,982 rate-controller cycles), still shows 1 each.
 - `pwm_out_sim` `interval` and `cycle` count 0 events although the work queue shows it at 240 Hz: in HIL mode it doesn't update those counters (**verify**).
 
 ## MAVLink link during hover (2026-11-03)
