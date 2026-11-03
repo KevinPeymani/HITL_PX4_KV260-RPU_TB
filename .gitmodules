@@ -1,0 +1,8 @@
+[submodule "NuttX/nuttx"]
+	path = NuttX/nuttx
+	url = https://github.com/KevinPeymani/nuttx.git
+	branch = kv260-rpu
+[submodule "PX4/PX4-Autopilot"]
+	path = PX4/PX4-Autopilot
+	url = https://github.com/KevinPeymani/PX4-ZynqMPSoC.git
+	branch = kv260-rpu
