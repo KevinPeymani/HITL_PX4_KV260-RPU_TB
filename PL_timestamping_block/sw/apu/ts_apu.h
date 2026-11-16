@@ -42,7 +42,7 @@ enum ts_ch {
 int  ts_uio_map(uint32_t phys, volatile uint32_t **regs, size_t *size);
 void ts_uio_unmap(volatile uint32_t *regs, size_t size);
 
-/* Maps gpio_apu and drives all channels low; returns 0 or -errno. */
+/* Maps gpio_apu and keeps the current output levels; returns 0 or -errno. */
 int  ts_open(void);
 void ts_close(void);
 

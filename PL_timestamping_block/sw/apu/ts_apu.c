@@ -98,9 +98,9 @@ int ts_open(void)
     if (ret != 0)
         return ret;
 
+    /* Adopts the current output levels; writing them here would create edges. */
     pthread_mutex_lock(&lock);
-    shadow = 0;
-    write_data(shadow);
+    shadow = gpio[TS_GPIO_DATA / 4] & ((1u << TS_NUM_CH) - 1);
     pthread_mutex_unlock(&lock);
     return 0;
 }
