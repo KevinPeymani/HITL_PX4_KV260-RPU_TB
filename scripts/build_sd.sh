@@ -1,14 +1,16 @@
 #!/bin/bash
-# build_sd.sh - Package PetaLinux WIC image and flash it to an SD card (KV260)
+# build_sd.sh - Build PetaLinux, package the WIC image and flash it to an SD card (KV260)
 #
-#   Stage 1: petalinux-package --wic  -> images/linux/petalinux-sdimage.wic
-#   Stage 2: wipe the SD card and write the WIC image onto it
+#   build:   petalinux-build                -> images/linux/{Image,system.dtb,...}
+#   package: petalinux-package --wic        -> images/linux/petalinux-sdimage.wic
+#   flash:   wipe the SD card and write the WIC image onto it
 #
-#   Stage 2 can optionally run against an SD card plugged into a remote
-#   computer (--remote): the image is streamed over SSH and written there.
+#   Steps are picked with flags and always run in the order above. flash can
+#   optionally target an SD card plugged into a remote computer (--remote):
+#   the image is streamed over SSH and written there.
 #
-# Run as your normal user (petalinux-package refuses to run as root);
-# stage 2 uses sudo for the disk operations (on the remote computer when
+# Run as your normal user (petalinux-build/-package refuse to run as root);
+# flash uses sudo for the disk operations (on the remote computer when
 # --remote is used; the SSH password is reused for sudo there).
 
 set -euo pipefail
@@ -33,7 +35,7 @@ die()   { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 # Single-quote a string for a POSIX shell
 sq() { local s=${1//\'/\'\\\'\'}; printf "'%s'" "$s"; }
 
-# Run a shell command on the stage 2 target (this machine, or REMOTE over SSH)
+# Run a shell command on the flash target (this machine, or REMOTE over SSH)
 on_target() {
     if [[ -n "$REMOTE" ]]; then
         sshpass -e ssh -n "${SSH_OPTS[@]}" "$REMOTE" "sh -c $(sq "$1")"
@@ -42,7 +44,7 @@ on_target() {
     fi
 }
 
-# Run a shell command as root on the stage 2 target. Its stdin is passed on
+# Run a shell command as root on the flash target. Its stdin is passed on
 # to the command. Remotely, the password is sent as the first line of the
 # stream and handed to sudo through a temporary SUDO_ASKPASS helper, so it
 # works without a TTY and without relying on sudo's credential cache (which
@@ -72,63 +74,78 @@ target_name() { [[ -n "$REMOTE" ]] && echo "$REMOTE" || echo "this machine"; }
 
 usage() {
     cat <<EOF
-Usage: $0 <stage> [sd_device] [options]
+Usage: $0 [steps] [options]
 
-Stages:
-  1        Package the WIC image (petalinux-package --wic)
-  2        Wipe the SD card and write the WIC image   (needs sd_device)
-  all      Run stage 1, then stage 2                  (needs sd_device)
+Steps (any combination; they always run in this order):
+  -b, --build               Build the PetaLinux project (petalinux-build)
+  -p, --package             Package the WIC image (petalinux-package --wic)
+  -f, --flash[=DEVICE]      Wipe the SD card and write the WIC image.
+                            DEVICE (e.g. /dev/sdf) is prompted for if omitted.
+  -a, --all                 Same as --build --package --flash
 
 Options:
-  --remote[=USER@HOST]  Stage 2: write the SD card plugged into a remote
-                        computer over SSH. USER@HOST is prompted for if
-                        omitted; the password is always prompted for.
+  -r, --remote[=USER@HOST]  Flash the SD card plugged into a remote computer
+                            over SSH (implies --flash). USER@HOST is prompted
+                            for if omitted; the password is always prompted for.
+  -h, --help                Show this help
 
-With no arguments, an interactive menu is shown.
+With no step given, each step is offered as a yes/no question.
 
 Examples:
-  $0 1
-  $0 2 /dev/sdf
-  $0 2 /dev/sdf --remote=kevin@192.168.1.20
-  $0 all /dev/sdf
-  $0 all --remote
+  $0 --build --package
+  $0 -pf /dev/sdf                    (short flags can be grouped)
+  $0 --flash=/dev/sdf --remote=kevin@192.168.1.20
+  $0 --all --remote
 EOF
 }
 
-# ---------------------------------------------------------------------------
-# Stage 1: package
-# ---------------------------------------------------------------------------
-stage1() {
-    [[ $EUID -ne 0 ]] || die "Stage 1 must not run as root (petalinux-package refuses it)."
-
-    if ! command -v petalinux-package >/dev/null 2>&1; then
-        [[ -f "$PETALINUX_SETTINGS" ]] || die "PetaLinux settings not found: $PETALINUX_SETTINGS"
-        info "Sourcing $PETALINUX_SETTINGS ..."
-        set +u
-        # shellcheck disable=SC1090
-        source "$PETALINUX_SETTINGS" >/dev/null
-        set -u
-    fi
-
-    for f in $BOOTFILES; do
-        [[ -f "$IMAGES_DIR/$f" ]] || die "Missing boot file: $IMAGES_DIR/$f (run petalinux-build first?)"
-    done
-
-    info "Stage 1: packaging WIC image ..."
-    (cd "$PROJECT_DIR" && petalinux-package --wic --bootfiles "$BOOTFILES")
-
-    [[ -f "$WIC_IMAGE" ]] || die "Packaging finished but $WIC_IMAGE was not found."
-    info "Stage 1 complete: $WIC_IMAGE"
+# Source the PetaLinux environment unless it is already loaded
+petalinux_env() {
+    [[ $EUID -ne 0 ]] || die "PetaLinux tools refuse to run as root; run as your normal user."
+    command -v petalinux-build >/dev/null 2>&1 && return
+    [[ -f "$PETALINUX_SETTINGS" ]] || die "PetaLinux settings not found: $PETALINUX_SETTINGS"
+    info "Sourcing $PETALINUX_SETTINGS ..."
+    set +u
+    # shellcheck disable=SC1090
+    source "$PETALINUX_SETTINGS" >/dev/null
+    set -u
 }
 
 # ---------------------------------------------------------------------------
-# Stage 2: wipe SD card and write image
+# Step: build
 # ---------------------------------------------------------------------------
-stage2() {
+step_build() {
+    petalinux_env
+    info "Build: running petalinux-build in $PROJECT_DIR ..."
+    (cd "$PROJECT_DIR" && petalinux-build) || die "Petalinux build failed. Logs : $PROJECT_DIR/build/build.log"
+    info "Build complete."
+}
+
+# ---------------------------------------------------------------------------
+# Step: package
+# ---------------------------------------------------------------------------
+step_package() {
+    petalinux_env
+
+    for f in $BOOTFILES; do
+        [[ -f "$IMAGES_DIR/$f" ]] || die "Missing boot file: $IMAGES_DIR/$f (run with --build first?)"
+    done
+
+    info "Package: creating WIC image ..."
+    (cd "$PROJECT_DIR" && petalinux-package --wic --bootfiles "$BOOTFILES")
+
+    [[ -f "$WIC_IMAGE" ]] || die "Packaging finished but $WIC_IMAGE was not found."
+    info "Package complete: $WIC_IMAGE"
+}
+
+# ---------------------------------------------------------------------------
+# Step: flash (wipe SD card and write image)
+# ---------------------------------------------------------------------------
+step_flash() {
     local dev="$1"
     local d; d="$(sq "$dev")"
 
-    [[ -f "$WIC_IMAGE" ]] || die "WIC image not found: $WIC_IMAGE (run stage 1 first)."
+    [[ -f "$WIC_IMAGE" ]] || die "WIC image not found: $WIC_IMAGE (run with --package first)."
     on_target "test -b $d" || die "$dev is not a block device on $(target_name)."
     [[ "$(on_target "lsblk -dno TYPE $d")" == "disk" ]] || die "$dev is a partition; pass the whole disk (e.g. /dev/sdf)."
 
@@ -168,53 +185,56 @@ dd if=/dev/zero of=$d bs=1M count=16 conv=fsync status=none" </dev/null
 
     on_target_root "partprobe $d 2>/dev/null || true" </dev/null
     sleep 1
-    info "Stage 2 complete. Partitions on $dev ($(target_name)):"
+    info "Flash complete. Partitions on $dev ($(target_name)):"
     on_target "lsblk -o NAME,SIZE,FSTYPE,LABEL $d"
 }
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-STAGE=""
+DO_BUILD=0
+DO_PACKAGE=0
+DO_FLASH=0
 SD_DEV=""
 REMOTE=""
 USE_REMOTE=0
 
-positional=()
-while [[ $# -gt 0 ]]; do
+# Ask a yes/no question; the default answer is no
+ask() { local a; read -r -p "$1 [y/N]: " a; [[ "$a" == [yY]* ]]; }
+
+opts=$(getopt -o bpf::ar::h -l build,package,flash::,all,remote::,help -n "$(basename "$0")" -- "$@") \
+    || { usage; exit 1; }
+eval set -- "$opts"
+while true; do
     case "$1" in
-        --remote)     USE_REMOTE=1 ;;
-        --remote=*)   USE_REMOTE=1; REMOTE="${1#--remote=}" ;;
+        -b|--build)   DO_BUILD=1 ;;
+        -p|--package) DO_PACKAGE=1 ;;
+        -f|--flash)   DO_FLASH=1; SD_DEV="$2"; shift ;;
+        -a|--all)     DO_BUILD=1; DO_PACKAGE=1; DO_FLASH=1 ;;
+        -r|--remote)  DO_FLASH=1; USE_REMOTE=1; REMOTE="$2"; shift ;;
         -h|--help)    usage; exit 0 ;;
-        -*)           usage; die "Unknown option: $1" ;;
-        *)            positional+=("$1") ;;
+        --)           shift; break ;;
     esac
     shift
 done
-STAGE="${positional[0]:-}"
-SD_DEV="${positional[1]:-}"
 
-if [[ -z "$STAGE" ]]; then
-    echo "Select an option:"
-    echo "  1) Stage 1 - package WIC image"
-    echo "  2) Stage 2 - wipe SD card and write image"
-    echo "  3) Stage 2 - wipe SD card and write image on a remote computer (SSH)"
-    echo "  4) Both    - stage 1 then stage 2"
-    echo "  5) Both    - stage 1 then stage 2 on a remote computer (SSH)"
-    read -r -p "Choice [1-5]: " choice
-    case "$choice" in
-        1) STAGE=1 ;;
-        2) STAGE=2 ;;
-        3) STAGE=2;   USE_REMOTE=1 ;;
-        4) STAGE=all ;;
-        5) STAGE=all; USE_REMOTE=1 ;;
-        *) die "Invalid choice: $choice" ;;
-    esac
+# A bare trailing argument is the SD card device (lets "-f /dev/sdf" work)
+if [[ $# -gt 0 ]]; then
+    [[ $DO_FLASH -eq 1 && -z "$SD_DEV" && $# -eq 1 ]] || { usage; die "Unexpected argument(s): $*"; }
+    SD_DEV="$1"
+fi
+
+if (( DO_BUILD + DO_PACKAGE + DO_FLASH == 0 )); then
+    ask "Build the PetaLinux project?"          && DO_BUILD=1
+    ask "Package the WIC image?"                && DO_PACKAGE=1
+    if ask "Flash the SD card?"; then
+        DO_FLASH=1
+        ask "Is the SD card on a remote computer (SSH)?" && USE_REMOTE=1
+    fi
+    (( DO_BUILD + DO_PACKAGE + DO_FLASH > 0 )) || die "No step selected."
 fi
 
 if [[ $USE_REMOTE -eq 1 ]]; then
-    [[ "$STAGE" == "2" || "$STAGE" == "all" || "$STAGE" == "both" ]] \
-        || die "--remote only applies to stage 2 / all."
     command -v sshpass >/dev/null 2>&1 || die "sshpass is not installed (sudo apt install sshpass)."
     if [[ -z "$REMOTE" ]]; then
         read -r -p "Remote computer (user@address): " REMOTE
@@ -227,18 +247,16 @@ if [[ $USE_REMOTE -eq 1 ]]; then
     on_target "true" || die "Cannot connect to $REMOTE over SSH."
 fi
 
-if [[ "$STAGE" == "2" || "$STAGE" == "all" ]] && [[ -z "$SD_DEV" ]]; then
+# Pick the device up front so a long build is not followed by a prompt
+if [[ $DO_FLASH -eq 1 && -z "$SD_DEV" ]]; then
     echo ""
     on_target "lsblk -d -o NAME,SIZE,MODEL,TRAN,RM"
     read -r -p "SD card device on $(target_name) (e.g. /dev/sdf): " SD_DEV
     [[ -n "$SD_DEV" ]] || die "No SD card device specified."
 fi
 
-case "$STAGE" in
-    1)          stage1 ;;
-    2)          stage2 "$SD_DEV" ;;
-    all|both)   stage1; stage2 "$SD_DEV" ;;
-    *)          usage; die "Unknown stage: $STAGE" ;;
-esac
+[[ $DO_BUILD   -eq 1 ]] && step_build
+[[ $DO_PACKAGE -eq 1 ]] && step_package
+[[ $DO_FLASH   -eq 1 ]] && step_flash "$SD_DEV"
 
 info "Done."
