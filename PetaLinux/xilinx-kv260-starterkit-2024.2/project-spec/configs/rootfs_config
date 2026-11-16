@@ -4008,6 +4008,7 @@ CONFIG_Init-manager-systemd=y
 # CONFIG_gpio-demo is not set
 CONFIG_packagegroup-kria=y
 # CONFIG_peekpoke is not set
+CONFIG_ts-bench=y
 
 #
 # PetaLinux RootFS Settings
