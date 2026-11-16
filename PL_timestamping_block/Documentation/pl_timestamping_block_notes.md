@@ -1,0 +1,25 @@
+# PL Timestamping Block: Notes
+
+## Phase 2: Vivado block design
+
+- pl_clk0 achieved frequency: 99.999001 MHz (requested 100 MHz).
+- Address map:
+
+| Slave | Port | Base |
+|---|---|---|
+| `ts_fifo` | HPM0_FPD | `0xA000_0000` |
+| `gpio_apu` | HPM0_FPD | `0xA001_0000` |
+| `vcu_0` | HPM0_FPD | `0xA010_0000` |
+| `gpio_r5` | HPM0_LPD | `0x8000_0000` |
+
+- Fan PWM: TTC0 through EMIO. The R5 uses TTC2 for its tick and timebase, so there is no conflict.
+- Timing after implementation: WNS 1.122 ns, WHS 0.012 ns.
+
+## Phase 3: Linux overlay and loading
+
+- Packaged as the PetaLinux firmware app `ts-bench` (`dfx_user_dts`), installed in `/lib/firmware/xilinx/ts-bench/`.
+- `xmutil loadapp` failed with "DMA buffer alloc failed": the R5 carve-outs at `0x3C00_0000`–`0x3E10_0000` left no contiguous 900 MiB for `cma=900M`. Bootargs changed to `cma=512M`.
+- After `xmutil unloadapp` (to remove the auto-loaded k26-starter-kits) and `xmutil loadapp ts-bench`, `GPIO2_DATA` at `0xA001_0008` reads the running counter: two reads 27.6 ms apart differ by 2,758,060 ticks.
+- `uio_pdrv_genirq` only binds `generic-uio` nodes when it is given `of_id=generic-uio`. With that set, the FIFO shows up as `uio4` (`0xA000_0000`) and `gpio_apu` as `uio5` (`0xA001_0000`). The parameter is now a bootarg, and ts-bench is made the default dfx-mgr app.
+- Manual capture test with `devmem` (writing `gpio_apu`, reading the FIFO over AXI4-Lite): every edge gave one 8-byte packet with the expected `ch_change`/`ch_level`, `ovf = 0`. Between two events, `ts[43:32]` went from `0x01F` to `0x020`, so the carry across the 32-bit boundary works.
+- After the rebuild, boot alone is enough: ts-bench is the default dfx-mgr app, the bootarg is on the cmdline, `uio4`/`uio5` appear and the counter runs. Phase 3 is complete.

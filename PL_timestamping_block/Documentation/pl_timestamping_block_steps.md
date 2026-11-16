@@ -10,8 +10,8 @@ Architecture, event format and channel map are in `PL_timestamping_plan.md`.
    - `cnt_lo[31:0]` (output)
    - `m_axis_tdata[31:0]`, `m_axis_tvalid`, `m_axis_tready`, `m_axis_tlast`
 2. Add a 44-bit free-running counter. Make its reset value a parameter so the wrap case can be tested.
-3. Register `{gpio_r5, gpio_apu}` and XOR with the previous value to get `mask`. An event occurs when `mask != 0`.
-4. On an event, push `{ovf, 3'b0, mask, level, ts}` (64 bits) into an `xpm_fifo_sync` of depth 16.
+3. Register `{gpio_r5, gpio_apu}` and XOR with the previous value to get `ch_change`. An event occurs when `ch_change != 0`.
+4. On an event, push `{ovf, 3'b0, ch_change, ch_level, ts}` (64 bits) into an `xpm_fifo_sync` of depth 16.
 5. If that FIFO is full when an event arrives, set the sticky `ovf` flag. Clear it once an event carrying the flag has been pushed.
 6. Write a 2-state serializer: word 0 = `ts[31:0]`, then word 1 = the upper bits with `tlast = 1`.
 7. Write a testbench covering:
@@ -60,10 +60,10 @@ Architecture, event format and channel map are in `PL_timestamping_plan.md`.
 
 ## Phase 4: APU software and PL-side validation
 
-1. Write a small C helper (`tp_apu.c`):
+1. Write a small C helper (`ts_apu.c`):
    - `mmap` the APU GPIO through its UIO device.
-   - `tp_toggle(ch)`: update a shadow register and write GPIO_DATA (0x0). Protect the shadow with a mutex if more than one thread toggles.
-   - `tp_counter()`: read GPIO2_DATA (0x8).
+   - `ts_toggle(ch)`: update a shadow register and write GPIO_DATA (0x0). Protect the shadow with a mutex if more than one thread toggles.
+   - `ts_counter()`: read GPIO2_DATA (0x8).
 2. Write the reader (`ts_reader.c`):
    - `mmap` the FIFO.
    - At startup, reset the receive FIFO (write 0xA5 to RDFR) and clear ISR.
@@ -72,12 +72,12 @@ Architecture, event format and channel map are in `PL_timestamping_plan.md`.
    - Check the register offsets against PG080.
 3. **Test: toggle loop.** Toggle ch0 N times at a known period. Check that exactly N events arrive, that the deltas match the period, and that `ovf` never appears.
 4. **Test: clock frequency.** Compare the counter against `CLOCK_MONOTONIC` over 60 s and record the real pl_clk0 frequency for the paper. It is often not exactly 100.000 MHz.
-5. **Test: write-latency bound.** Read `tp_counter()`, toggle, then compare the event timestamp with the value read. The difference is an upper bound on the APU's write latency.
+5. **Test: write-latency bound.** Read `ts_counter()`, toggle, then compare the event timestamp with the value read. The difference is an upper bound on the APU's write latency.
 
 ## Phase 5: R5 side
 
 1. In the board's MPU init, add a region over the R5 GPIO address range as **Device / strongly-ordered, non-cacheable**. Without this, the write buffer delays toggles unpredictably.
-2. Add `tp_toggle(ch)` to the board's source, with a shadow register updated inside `enter_critical_section()`. Several PX4 tasks share one data register, so a plain read-modify-write would race. Declare it in a board header.
+2. Add `ts_toggle(ch)` to the board's source, with a shadow register updated inside `enter_critical_section()`. Several PX4 tasks share one data register, so a plain read-modify-write would race. Declare it in a board header.
 3. Add an NSH test command that toggles ch4–7 in a loop. Verify the events with `ts_reader`.
 4. Repeat the write-latency bound test from the R5, reading GPIO2_DATA.
 5. Add the PX4 instrumentation points:
